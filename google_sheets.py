@@ -6,7 +6,8 @@ import apiclient.discovery
 API_KEY_FILE = 'auth.json'
 
 # Адреса электронной почты пользователей, которым хотим предоставить доступ
-USER_EMAILS = ['example@example.com', 'example@example.com']
+USER_EMAILS = ['radkovichsiarhei@gmail.com', 'example@example.com']
+
 
 def get_google_sheets_client(api_key_file):
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -97,6 +98,11 @@ def read_data_from_user():
 
 
 def main():
+    """
+    Пример использования всех методов
+    предоставленных для взаимодействия с Google API
+    """
+
     client = get_google_sheets_client(API_KEY_FILE)
 
     # Получение доступа к Google Drive API
