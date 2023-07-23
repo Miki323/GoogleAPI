@@ -2,10 +2,11 @@ from google.oauth2.service_account import Credentials
 import gspread
 import apiclient.discovery
 
-from config import SPREADSHEET_NAME, USER_EMAILS
-
+# Ваш API-ключ должен быть в формате JSON и находиться в той же директории, где находится скрипт.
 API_KEY_FILE = 'auth.json'
 
+# Адреса электронной почты пользователей, которым хотим предоставить доступ
+USER_EMAILS = ['example@example.com', 'example@example.com']
 
 def get_google_sheets_client(api_key_file):
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
