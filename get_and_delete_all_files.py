@@ -1,6 +1,8 @@
 from google.oauth2.service_account import Credentials
 import googleapiclient.discovery
-from config import API_KEY_FILE
+
+# Ваш API-ключ должен быть в формате JSON и находиться в той же директории, где находится скрипт.
+API_KEY_FILE = 'auth.json'
 
 
 # Функция для получения доступа к Google Drive API
