@@ -97,16 +97,24 @@ def read_data_from_user():
         return None
 
 
+def write_data_action(sheet):
+    data_to_write = read_data_from_user()
+    if data_to_write:
+        write_data(sheet, data_to_write)
+    else:
+        print("Некорректные данные. Повторите попытку.")
+
+
 def main():
-    """
-    Пример использования всех методов
-    предоставленных для взаимодействия с Google API
-    """
-
     client = get_google_sheets_client(API_KEY_FILE)
-
-    # Получение доступа к Google Drive API
     drive_service = get_google_drive_service(API_KEY_FILE)
+
+    actions = {
+        "1": lambda: create_new_sheet(client, input("Введите имя новой таблицы: \n")),
+        "2": lambda: [print(f"{i}. {file['name']} (Идентификатор: {file['id']}) URL таблицы: https://docs.google.com/spreadsheets/d/{file['id']}'\n") for i, file in enumerate(list_all_files(drive_service), start=1)],
+        "3": lambda: select_and_handle_sheet(drive_service, client),
+        "0": lambda: None
+    }
 
     while True:
         print("")
@@ -117,77 +125,68 @@ def main():
         print("0. Выход\n")
 
         choice = input("Введите номер действия: \n")
-
-        if choice == "1":
-            sheet_name = input("Введите имя новой таблицы: \n")
-            create_new_sheet(client, sheet_name)
-        elif choice == "2":
-            files = list_all_files(drive_service)
-            for i, file in enumerate(files, start=1):
-                print(
-                    f"{i}. {file['name']} (Идентификатор: {file['id']}) URL таблицы: https://docs.google.com/spreadsheets/d/{file['id']}'\n")
-        elif choice == "3":
-            files = list_all_files(drive_service)
-            for i, file in enumerate(files, start=1):
-                print(
-                    f"{i}. {file['name']} (Идентификатор: {file['id']}) URL таблицы: https://docs.google.com/spreadsheets/d/{file['id']}'\n")
-
-            while True:
-                choice = input("Введите номер таблицы, которую хотите использовать: \n")
-                if not choice.isdigit():
-                    print("Пожалуйста, введите число.\n")
-                    continue
-
-                choice = int(choice)
-                if 1 <= choice <= len(files):
-                    break
-                else:
-                    print("Нет такого номера таблицы. Повторите попытку.\n")
-
-            selected_file = files[choice - 1]
-            spreadsheet_id = selected_file.get('id')
-            name = selected_file.get('name')
-            sheet = get_spreadsheet_by_id(client, spreadsheet_id)
-            if not sheet:
-                print("Таблица не найдена.\n")
-                continue
-            while True:
-                print(
-                    f"{name} (Идентификатор: {spreadsheet_id}) URL таблицы: https://docs.google.com/spreadsheets/d/{spreadsheet_id}'\n")
-                print("1. Записать данные в выбранную таблицу")
-                print("2. Просмотреть данные выбранной таблицы")
-                print("3. Очистить данные выбранной таблицы")
-                print("4. Удалить выбранную таблицу")
-                print("5. Предоставить доступ к таблице")
-                print("0. Вернуться в главное меню\n")
-
-                choice = input("Введите номер действия: \n")
-                try:
-                    if choice == "1":
-                        data_to_write = read_data_from_user()
-                        if data_to_write:
-                            write_data(sheet, data_to_write)
-                        else:
-                            print("Некорректные данные. Повторите попытку.")
-                    elif choice == "2":
-                        view_data(sheet)
-                    elif choice == "3":
-                        clear_data(sheet)
-                    elif choice == "4":
-                        delete_sheet(drive_service, spreadsheet_id)
-                    elif choice == "5":
-                        grant_access_to_users(drive_service, spreadsheet_id, USER_EMAILS)
-                    elif choice == "0":
-                        break
-                    else:
-                        print("Некорректный ввод. Повторите попытку.\n")
-                except Exception as e:
-                    print(e)
-                    break
-        elif choice == "0":
-            break
+        if choice in actions:
+            if choice == "0":
+                break
+            actions[choice]()
         else:
             print("Некорректный ввод. Повторите попытку.\n")
+
+
+def select_and_handle_sheet(drive_service, client):
+    files = list_all_files(drive_service)
+    for i, file in enumerate(files, start=1):
+        print(
+            f"{i}. {file['name']} (Идентификатор: {file['id']}) URL таблицы: https://docs.google.com/spreadsheets/d/{file['id']}'\n")
+
+    while True:
+        choice = input("Введите номер таблицы, которую хотите использовать: \n")
+        if not choice.isnumeric():
+            print("Пожалуйста, введите число.\n")
+            continue
+
+        choice = int(choice)
+        if 1 <= choice <= len(files):
+            break
+        else:
+            print("Нет такого номера таблицы. Повторите попытку.\n")
+
+    selected_file = files[choice - 1]
+    spreadsheet_id = selected_file.get('id')
+    name = selected_file.get('name')
+    sheet = get_spreadsheet_by_id(client, spreadsheet_id)
+    if not sheet:
+        print("Таблица не найдена.\n")
+        return
+    while True:
+        print(
+            f"{name} (Идентификатор: {spreadsheet_id}) URL таблицы: https://docs.google.com/spreadsheets/d/{spreadsheet_id}'\n")
+        print("1. Записать данные в выбранную таблицу")
+        print("2. Просмотреть данные выбранной таблицы")
+        print("3. Очистить данные выбранной таблицы")
+        print("4. Удалить выбранную таблицу")
+        print("5. Предоставить доступ к таблице")
+        print("0. Вернуться в главное меню\n")
+
+        choice = input("Введите номер действия: \n")
+        try:
+            if choice == "1":
+                write_data_action(sheet)
+            elif choice == "2":
+                view_data(sheet)
+            elif choice == "3":
+                clear_data(sheet)
+            elif choice == "4":
+                delete_sheet(drive_service, spreadsheet_id)
+            elif choice == "5":
+                grant_access_to_users(drive_service, spreadsheet_id, USER_EMAILS)
+            elif choice == "0":
+                break
+            else:
+                print("Некорректный ввод. Повторите попытку.\n")
+        except Exception as e:
+            print(e)
+            break
 
 
 if __name__ == '__main__':
